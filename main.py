@@ -7,14 +7,14 @@ with open("verne.txt", "r") as f:
     text = f.read()
 
 vocab_size = len(set(text))
-batch_size = 32
-embed_size = 256
-block_size = 8
-num_heads = 8
-num_blocks = 4
+batch_size = 64
+embed_size = 384
+block_size = 256
+num_heads = 6
+num_blocks = 6
 device = torch.device("mps")
-learning_rate = 1e-3
-total_iters = 10000
+learning_rate = 3e-4
+total_iters = 5000
 eval_iters = total_iters // 10
 
 # construct a character level tokenizer

@@ -25,6 +25,7 @@ class EncoderTransformer(nn.Module):
                 Block(num_heads, head_size, embed_size, block_size)
                 for _ in range(num_blocks)
             ]
+            + [nn.LayerNorm(embed_size)]
         )
         self.lm_head = nn.Linear(embed_size, vocab_size)
 
@@ -68,15 +69,23 @@ class MultiHeadAttention(nn.Module):
     """
 
     def __init__(
-        self, num_heads: int, head_size: int, embed_size: int, block_size: int
+        self,
+        num_heads: int,
+        head_size: int,
+        embed_size: int,
+        block_size: int,
+        dropout: float = 0.2,
     ):
         super().__init__()
         self.heads = nn.ModuleList(
             [Head(head_size, embed_size, block_size) for _ in range(num_heads)]
         )
+        self.proj = nn.Linear(embed_size, embed_size)
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return torch.cat([head(x) for head in self.heads], dim=-1)
+        out = torch.cat([head(x) for head in self.heads], dim=-1)
+        return self.dropout(self.proj(out))
 
 
 class Head(nn.Module):
@@ -84,7 +93,9 @@ class Head(nn.Module):
     A single head of a multi-head attention layer.
     """
 
-    def __init__(self, head_size: int, embed_size: int, block_size: int):
+    def __init__(
+        self, head_size: int, embed_size: int, block_size: int, dropout: float = 0.2
+    ):
         super().__init__()
         self.head_size = head_size
         self.queries = nn.Linear(embed_size, head_size, bias=False)
@@ -93,6 +104,7 @@ class Head(nn.Module):
         self.register_buffer(
             "tril_mask", torch.tril(torch.ones(block_size, block_size))
         )
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -111,6 +123,7 @@ class Head(nn.Module):
             self.tril_mask[:T, :T] == 0, float("-inf")
         )  # (B, T, T)
         weights = F.softmax(weights, dim=-1)
+        weights = self.dropout(weights)
 
         return weights @ v  # (B, T, T) @ (B, T, H) -> (B, T, H)
 
@@ -120,12 +133,17 @@ class FeedForward(nn.Module):
     A feed-forward network used in the Transformer.
     """
 
-    def __init__(self, embed_size: int):
+    def __init__(self, embed_size: int, dropout: float = 0.2):
         super().__init__()
-        self.fc = nn.Linear(embed_size, embed_size)
+        self.layers = nn.Sequential(
+            nn.Linear(embed_size, embed_size * 4),
+            nn.ReLU(),
+            nn.Linear(4 * embed_size, embed_size),
+            nn.Dropout(dropout),
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return F.relu(self.fc(x))
+        return self.layers(x)
 
 
 class Block(nn.Module):
@@ -145,8 +163,10 @@ class Block(nn.Module):
             num_heads, head_size, embed_size, block_size
         )
         self.feed_forward = FeedForward(embed_size)
+        self.layer_norm1 = nn.LayerNorm(embed_size)
+        self.layer_norm2 = nn.LayerNorm(embed_size)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.multi_head_attention(x)
-        x = self.feed_forward(x)
+        x = x + self.multi_head_attention(self.layer_norm1(x))
+        x = x + self.feed_forward(self.layer_norm2(x))
         return x
