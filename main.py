@@ -1,10 +1,7 @@
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from tqdm import tqdm
 
-from bigram import BigramLanguageModel
-from decoder_transformer import Head
+from decoder_transformer import EncoderTransformer
 
 with open("verne.txt", "r") as f:
     text = f.read()
@@ -12,8 +9,8 @@ with open("verne.txt", "r") as f:
 vocab_size = len(set(text))
 batch_size = 32
 embed_size = 256
-head_size = 32
 block_size = 8
+num_heads = 8
 device = torch.device("mps")
 learning_rate = 1e-3
 total_iters = 10000
@@ -56,7 +53,12 @@ def eval_loss(model):
 
 torch.manual_seed(1337)
 
-model = Head(head_size, embed_size, block_size, vocab_size).to(device)
+model = EncoderTransformer(
+    num_heads=num_heads,
+    embed_size=embed_size,
+    block_size=block_size,
+    vocab_size=vocab_size,
+).to(device)
 optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 progress_bar = tqdm(range(total_iters))
 

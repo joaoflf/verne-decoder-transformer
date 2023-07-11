@@ -7,18 +7,49 @@ This repository contains an implementation of a Transformer Decoder in PyTorch f
 
 Our plan includes several key steps:
 
-- ✅ Start with a basic bigram model and a basic table lookup embedding layer. After **10,000 iterations**, the results are as follows:
+- ✅ Start with a basic bigram model and a basic table lookup embedding layer. 
+    
+    ```python
+    iterations: 10,000
+    ```
 
-   | Metric     |  Value |
-   | :--------- | -----: |
-   | Train Loss | 2.4980 |
-   | Val Loss   | 2.5421 |
+    | Metric     | Value |
+    | :--------- | ----: |
+    | Train Loss |  2.57 |
+    | Val Loss   |   N/A |
+&nbsp;
 
-- 🔄 Add a self-attention block.
+- ✅ Add a self-attention block and introduce basic positional embeddings.
+    ```python
+    iterations: 10,000
+    block_size: 8
+    embed_size: 256
+    ```
 
-- 🔲 Implement self-attention heads and introduce basic positional embeddings.
+    | Metric     |  Value |
+    | :--------- | -----: |
+    | Train Loss | 2.4980 |
+    | Val Loss   | 2.5421 |
 
-- 🔲 Add a feed-forward network and stack multiple blocks of multi-head attention.
+&nbsp;
+
+- ✅ Implement self-attention heads.
+
+    ```python
+    iterations: 10,000
+    block_size: 8
+    embed_size: 256
+    num_heads: 8
+    ```
+
+    | Metric     | Value |
+    | :--------- | ----: |
+    | Train Loss |   2.1 |
+    | Val Loss   |  2.13 |
+
+&nbsp;
+
+- 🔄 Add a feed-forward network and stack multiple blocks of multi-head attention.
 
 - 🔲 Integrate residual connections.
 
