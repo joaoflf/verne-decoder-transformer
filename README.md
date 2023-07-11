@@ -3,9 +3,8 @@
 This repository contains an implementation of a Transformer Decoder in PyTorch from scratch. The purpose of this project is to generate text based on Jules Verne's literary works, using the original Transformer model as proposed in the ["Attention is All You Need"](https://arxiv.org/abs/1706.03762) paper and its subsequent improvements.
 
 &nbsp;
-## 📋 Plan
+## 🏈 Game Plan
 
-Our plan includes several key steps:
 
 - ✅ Start with a basic bigram model and a basic table lookup embedding layer. 
     
@@ -49,9 +48,26 @@ Our plan includes several key steps:
 
 &nbsp;
 
-- 🔄 Add a feed-forward network and stack multiple blocks of multi-head attention.
+- ✅ Add a feed-forward network and stack multiple blocks of multi-head attention.
+  
+    ```python
+    iterations: 10,000
+    block_size: 8
+    embed_size: 256
+    num_heads: 8
+    num_blocks: 4
+    ```
 
-- 🔲 Integrate residual connections.
+    | Metric     | Value |
+    | :--------- | ----: |
+    | Train Loss |  3.13 |
+    | Val Loss   |  3.17 |
+
+    *the networks is now too deep and is hurting training performance
+
+&nbsp;
+
+- 🔄 Integrate residual connections.
 
 - 🔲 Implement Layer Normalization.
 

@@ -11,6 +11,7 @@ batch_size = 32
 embed_size = 256
 block_size = 8
 num_heads = 8
+num_blocks = 4
 device = torch.device("mps")
 learning_rate = 1e-3
 total_iters = 10000
@@ -54,6 +55,7 @@ def eval_loss(model):
 torch.manual_seed(1337)
 
 model = EncoderTransformer(
+    num_blocks=num_blocks,
     num_heads=num_heads,
     embed_size=embed_size,
     block_size=block_size,

@@ -7,7 +7,12 @@ import torch.nn.functional as F
 
 class EncoderTransformer(nn.Module):
     def __init__(
-        self, num_heads: int, embed_size: int, block_size: int, vocab_size: int
+        self,
+        num_blocks: int,
+        num_heads: int,
+        embed_size: int,
+        block_size: int,
+        vocab_size: int,
     ):
         super().__init__()
         self.block_size = block_size
@@ -15,8 +20,11 @@ class EncoderTransformer(nn.Module):
         self.token_embedding_table = nn.Embedding(vocab_size, embed_size)
         self.position_embedding_table = nn.Embedding(block_size, embed_size)
         head_size = embed_size // num_heads
-        self.multi_head_attention = MultiHeadAttention(
-            num_heads, head_size, embed_size, block_size
+        self.blocks = nn.Sequential(
+            *[
+                Block(num_heads, head_size, embed_size, block_size)
+                for _ in range(num_blocks)
+            ]
         )
         self.lm_head = nn.Linear(embed_size, vocab_size)
 
@@ -29,7 +37,7 @@ class EncoderTransformer(nn.Module):
             torch.arange(T, device=x.device)
         )
         x = token_embedding + position_embedding
-        x = self.multi_head_attention(x)
+        x = self.blocks(x)
         logits = self.lm_head(x)
 
         if target is None:
@@ -105,3 +113,40 @@ class Head(nn.Module):
         weights = F.softmax(weights, dim=-1)
 
         return weights @ v  # (B, T, T) @ (B, T, H) -> (B, T, H)
+
+
+class FeedForward(nn.Module):
+    """
+    A feed-forward network used in the Transformer.
+    """
+
+    def __init__(self, embed_size: int):
+        super().__init__()
+        self.fc = nn.Linear(embed_size, embed_size)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return F.relu(self.fc(x))
+
+
+class Block(nn.Module):
+    """
+    A single block of the Transformer.
+    """
+
+    def __init__(
+        self,
+        num_heads: int,
+        head_size: int,
+        embed_size: int,
+        block_size: int,
+    ):
+        super().__init__()
+        self.multi_head_attention = MultiHeadAttention(
+            num_heads, head_size, embed_size, block_size
+        )
+        self.feed_forward = FeedForward(embed_size)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.multi_head_attention(x)
+        x = self.feed_forward(x)
+        return x
